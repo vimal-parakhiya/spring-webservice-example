@@ -12,21 +12,20 @@ function run_and_do_check_health() {
     APP_PID=$!
     echo "Process running with PID: $APP_PID"
 
-    health_check_command="curl $HEALTH_ENDPOINT"
-
     interval=1
     ((end_time=${SECONDS}+20))
 
-    until (((${SECONDS} > ${end_time})) || $health_check_command | grep -q $PATTERN)
+    while ((${SECONDS} < ${end_time}))
     do
-       echo "Service is not up yet"
-       sleep ${interval}
+        if curl $HEALTH_ENDPOINT | grep -q $PATTERN; then
+            echo "Service is up now"
+            app_status=0
+            break
+        else
+            echo "Service is not up yet"
+            sleep ${interval}
+        fi
     done
-
-    PATTERN="\"id\":2"
-    if $health_check_command | grep -q $PATTERN; then
-        app_status=0;
-    fi
     kill $APP_PID
 }
 run_and_do_check_health \
